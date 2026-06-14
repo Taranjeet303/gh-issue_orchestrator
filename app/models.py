@@ -1,5 +1,5 @@
 from sqlalchemy import Column,String,Text,DateTime,Integer
-from datetime import datetime, UTC
+from datetime import datetime
 from app.database import Base
 class GitHubEvent(Base):
     __tablename__ = "github_events"
@@ -13,4 +13,4 @@ class GitHubEvent(Base):
     issue_body =   Column(Text)
     label =   Column(String)
     status  =      Column(String, default="pending")
-    received_at  = Column(DateTime, default=lambda: datetime.now(UTC) )
+    received_at = Column(DateTime, default=datetime.utcnow)
