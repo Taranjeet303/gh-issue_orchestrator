@@ -1,16 +1,43 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,Request, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
-
+from app.security import verify_github_signature
 router = APIRouter()
-
 @router.post("/github")
-def receive_github_webhook(
-    payload : schemas.GitHubEvent,
-    db: Session= Depends(get_db)
-
+async def receive_github_webhook(
+    request: Request,
+    db: Session = Depends(get_db)
 ):
+
+    body = await request.body()
+
+    github_signature = request.headers.get(
+        "X-Hub-Signature-256"
+    )
+
+    if not github_signature:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing signature"
+        )
+
+    if not verify_github_signature(
+        body,
+        github_signature
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid signature"
+        )
+
+    payload_dict = await request.json()
+
+    payload = schemas.GitHubEvent(
+        **payload_dict
+    )
+
+
     
     if payload.action != "labeled":
         return {
@@ -40,5 +67,6 @@ def receive_github_webhook(
 
     db.add(event)
     db.commit()
+    db.refresh(event)
 
     return {"status": "received"}
