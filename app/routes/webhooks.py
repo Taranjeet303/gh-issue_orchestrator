@@ -12,6 +12,21 @@ async def receive_github_webhook(
 ):
 
     body = await request.body()
+     # Check event type before signature verification.
+# This endpoint only processes GitHub issue events.
+# Non-issue events are ignored immediately to avoid
+# unnecessary HMAC verification work.
+
+    github_event = request.headers.get(
+       "X-GitHub-Event"
+    )
+    if github_event != "issues":
+       return build_response(
+        status="ignored",
+        message="Event type not supported",
+        data=None
+    )
+    
 
     github_signature = request.headers.get(
         "X-Hub-Signature-256"
