@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.security import verify_github_signature
+from app.utils import  build_response
 router = APIRouter()
 @router.post("/github")
 async def receive_github_webhook(
@@ -40,9 +41,10 @@ async def receive_github_webhook(
 
     
     if payload.action != "labeled":
-        return {
-            "status": "ignored"
-        }
+        return build_response( status= "ignored",
+             message= "Event not critical or not labeled action",
+             data= None   )
+   
     
         
     critical_found = False
@@ -53,7 +55,9 @@ async def receive_github_webhook(
         break
 
     if not critical_found:
-     return {"status": "ignored"}
+     return build_response( status= "ignored",
+             message= "Event not critical or not labeled action",
+             data= None   )
    
 
     event = models.GitHubEvent(
@@ -69,4 +73,10 @@ async def receive_github_webhook(
     db.commit()
     db.refresh(event)
 
-    return {"status": "received"}
+    return  build_response( status= "received",
+            message= "Critical issue queued for processing",
+            data = {
+               "issue_number": payload.issue.number,
+               "repo": payload.repository.full_name
+            }
+    )
