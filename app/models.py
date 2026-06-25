@@ -26,16 +26,17 @@ class Workflow(Base):
         is_active= Column(Boolean, default=True)
         created_at=Column(DateTime, default=datetime.utcnow)
         
-        steps= relationship("WorkflowStep",back_populates="workflow")
+        steps= relationship("WorkflowStep",back_populates="workflow", cascade="all, delete-orphan")
 
 class WorkflowStep(Base):
         __tablename__="workflow_steps" 
 
         id=Column(Integer, primary_key=True)
-        workflow_id=Column(Integer,ForeignKey("workflows.id"))
+        workflow_id=Column(Integer,ForeignKey("workflows.id", ondelete="CASCADE"))
         step_order=Column(Integer)
         action_type=Column(String)
         config=Column(JSON)
         retry_limit=Column(Integer, default=3)
         created_at=Column(DateTime, default=datetime.utcnow)     
         workflow= relationship("Workflow", back_populates="steps")
+
