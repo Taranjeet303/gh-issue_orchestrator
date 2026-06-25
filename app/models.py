@@ -15,6 +15,7 @@ class GitHubEvent(Base):
     label =   Column(String)
     status  =      Column(String, default="pending")
     received_at = Column(DateTime, default=datetime.utcnow)
+    executions = relationship("Execution", back_populates="github_event")
 
 class Workflow(Base):
         __tablename__= "workflows"
@@ -27,6 +28,11 @@ class Workflow(Base):
         created_at=Column(DateTime, default=datetime.utcnow)
         
         steps= relationship("WorkflowStep",back_populates="workflow", cascade="all, delete-orphan")
+        executions = relationship(
+           "Execution",
+            back_populates="workflow",
+            cascade="all, delete-orphan"
+                    )
 
 class WorkflowStep(Base):
         __tablename__="workflow_steps" 
@@ -40,3 +46,16 @@ class WorkflowStep(Base):
         created_at=Column(DateTime, default=datetime.utcnow)     
         workflow= relationship("Workflow", back_populates="steps")
 
+class Execution(Base):
+       __tablename__= "executions"
+
+       id = Column(Integer, primary_key=True)
+       workflow_id = Column(Integer, ForeignKey("workflows.id", ondelete="CASCADE"))
+       github_event_id = Column(Integer, ForeignKey("github_events.id"))
+       status = Column(String, default="pending")
+       current_step = Column(Integer, default=0)
+       started_at = Column(DateTime, default=datetime.utcnow)
+       completed_at = Column(DateTime, nullable=True)
+       error_message = Column(String, nullable=True)
+       workflow = relationship("Workflow", back_populates="executions")
+       github_event = relationship("GitHubEvent", back_populates="executions")
