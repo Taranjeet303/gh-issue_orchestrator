@@ -4,6 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.security import verify_github_signature
 from app.utils import  build_response
+from app.engine import find_matching_workflow,execute_workflow
 router = APIRouter()
 @router.post("/github")
 async def receive_github_webhook(
@@ -88,10 +89,32 @@ async def receive_github_webhook(
     db.commit()
     db.refresh(event)
 
-    return  build_response( status= "received",
-            message= "Critical issue queued for processing",
-            data = {
-               "issue_number": payload.issue.number,
-               "repo": payload.repository.full_name
-            }
+   
+    workflow = find_matching_workflow(
+     db,
+     event.event_type,
+     event.label
+)
+
+    if workflow is None:
+      return build_response(
+        status="ignored",
+        message="No matching workflow found",
+        data=None
     )
+
+    execution = execute_workflow(
+     db,
+     workflow,
+     event
+)
+
+    return build_response(
+    status="success",
+    message="Workflow executed successfully",
+    data={
+        "execution_id": execution.id,
+        "workflow_id": workflow.id,
+        "execution_status": execution.status
+    }
+)
