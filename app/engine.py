@@ -52,6 +52,7 @@ def execute_workflow(
 
         for step in steps:
             print(f"Executing step {step.step_order}: {step.action_type}")
+            
 
             execution.current_step = step.step_order
 
