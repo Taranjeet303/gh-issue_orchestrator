@@ -4,7 +4,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from app import models
+from app import models,engine
 
 
 load_dotenv()
@@ -51,3 +51,22 @@ def send_slack_message(
 ACTION_HANDLERS = {
     "slack": send_slack_message
 }
+
+from typing import Any
+
+def execute_action(
+    action_type: str,
+    config: dict[str, Any],
+    github_event: models.GitHubEvent
+):
+    handler = ACTION_HANDLERS.get(action_type)
+
+    if handler is None:
+        raise ValueError(
+            f"Unknown action type: {action_type}"
+        )
+
+    return handler(
+        config,
+        github_event
+    )
