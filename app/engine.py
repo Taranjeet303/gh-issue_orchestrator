@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app import models
 from datetime import datetime
+from app.actions import execute_action
 
 def find_matching_workflow(
     db: Session,
@@ -56,9 +57,11 @@ def execute_workflow(
 
             execution.current_step = step.step_order
 
-            # TODO:
-            # Execute the real action here (Slack, Email, Discord, etc.)
-            # For now, we simply simulate success.
+            execute_action(
+              step.action_type,
+              step.config,
+              github_event
+)
 
             db.commit()
 
