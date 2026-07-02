@@ -4,7 +4,8 @@ from app.database import get_db
 from app import models, schemas
 from app.security import verify_github_signature
 from app.utils import  build_response
-from app.engine import find_matching_workflow,execute_workflow
+from app.engine import find_matching_workflow
+from app.tasks import process_github_event_task
 router = APIRouter()
 @router.post("/github")
 async def receive_github_webhook(
@@ -103,18 +104,15 @@ async def receive_github_webhook(
         data=None
     )
 
-    execution = execute_workflow(
-     db,
-     workflow,
-     event
-)
+    process_github_event_task.delay(
+        event.id,
+        workflow.id
+       )
+     
+
 
     return build_response(
-    status="success",
-    message="Workflow executed successfully",
-    data={
-        "execution_id": execution.id,
-        "workflow_id": workflow.id,
-        "execution_status": execution.status
-    }
+    status="received",
+    message="Queued for processing",
+    
 )
